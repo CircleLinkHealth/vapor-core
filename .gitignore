@@ -6,3 +6,5 @@ composer.lock
 docs
 vendor
 coverage
+.idea/
+lsp/
