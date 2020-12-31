@@ -31,10 +31,10 @@ class SecretsFromS3
         ]);
 
         $envFiles = [
-            "$envType-common-secrets.env" => __DIR__ . "$envType-common-secrets.env",
-            "$envType-common-vars.env" => __DIR__ . "$envType-common-vars.env",
-            "$envType-$appName-secrets.env" => __DIR__ . "$envType-$appName-secrets.env",
-            "$envType-$appName-vars.env" => __DIR__ . "$envType-$appName-vars.env",
+            "$envType-common-secrets.env" => __DIR__ . "/$envType-common-secrets.env",
+            "$envType-common-vars.env" => __DIR__ . "/$envType-common-vars.env",
+            "$envType-$appName-secrets.env" => __DIR__ . "/$envType-$appName-secrets.env",
+            "$envType-$appName-vars.env" => __DIR__ . "/$envType-$appName-vars.env",
         ];
 
         $secrets = [];
