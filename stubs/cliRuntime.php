@@ -4,7 +4,7 @@ use Illuminate\Contracts\Console\Kernel as ConsoleKernelContract;
 use Laravel\Vapor\Runtime\CliHandlerFactory;
 use Laravel\Vapor\Runtime\LambdaContainer;
 use Laravel\Vapor\Runtime\LambdaRuntime;
-use Laravel\Vapor\Runtime\SecretsFromS3;
+use Laravel\Vapor\Runtime\CustomSecrets;
 use Laravel\Vapor\Runtime\StorageDirectories;
 
 /*
@@ -18,9 +18,8 @@ use Laravel\Vapor\Runtime\StorageDirectories;
 |
 */
 
-$secrets = SecretsFromS3::addToEnvironment(
-    $_ENV['ENV_TYPE'],
-    $_ENV['APP_NAME']
+$secrets = CustomSecrets::addToEnvironment(
+    __DIR__.'/vaporSecrets.php'
 );
 
 /*

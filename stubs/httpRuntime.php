@@ -3,7 +3,7 @@
 use Laravel\Vapor\Runtime\HttpHandlerFactory;
 use Laravel\Vapor\Runtime\LambdaContainer;
 use Laravel\Vapor\Runtime\LambdaRuntime;
-use Laravel\Vapor\Runtime\SecretsFromS3;
+use Laravel\Vapor\Runtime\CustomSecrets;
 
 ini_set('display_errors', '1');
 
@@ -20,9 +20,8 @@ error_reporting(E_ALL);
 |
 */
 
-$secrets = SecretsFromS3::addToEnvironment(
-    $_ENV['ENV_TYPE'],
-    $_ENV['APP_NAME']
+$secrets = CustomSecrets::addToEnvironment(
+    __DIR__.'/vaporSecrets.php'
 );
 
 /*

@@ -5,7 +5,7 @@ use Laravel\Vapor\Runtime\Fpm\Fpm;
 use Laravel\Vapor\Runtime\HttpHandlerFactory;
 use Laravel\Vapor\Runtime\LambdaContainer;
 use Laravel\Vapor\Runtime\LambdaRuntime;
-use Laravel\Vapor\Runtime\SecretsFromS3;
+use Laravel\Vapor\Runtime\CustomSecrets;
 use Laravel\Vapor\Runtime\StorageDirectories;
 
 /*
@@ -21,9 +21,8 @@ use Laravel\Vapor\Runtime\StorageDirectories;
 
 fwrite(STDERR, 'Preparing to add secrets to runtime' . PHP_EOL);
 
-$secrets = SecretsFromS3::addToEnvironment(
-    $_ENV['ENV_TYPE'],
-    $_ENV['APP_NAME']
+$secrets = CustomSecrets::addToEnvironment(
+    __DIR__.'/vaporSecrets.php'
 );
 
 /*
