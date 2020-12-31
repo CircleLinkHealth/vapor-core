@@ -1,10 +1,9 @@
 <?php
 
-use Laravel\Vapor\Runtime\Fpm\Fpm;
 use Laravel\Vapor\Runtime\HttpHandlerFactory;
 use Laravel\Vapor\Runtime\LambdaContainer;
 use Laravel\Vapor\Runtime\LambdaRuntime;
-use Laravel\Vapor\Runtime\Secrets;
+use Laravel\Vapor\Runtime\SecretsFromS3;
 
 ini_set('display_errors', '1');
 
@@ -21,10 +20,9 @@ error_reporting(E_ALL);
 |
 */
 
-Secrets::addToEnvironment(
-    $_ENV['VAPOR_SSM_PATH'],
-    json_decode($_ENV['VAPOR_SSM_VARIABLES'] ?? '[]', true),
-    __DIR__.'/vaporSecrets.php'
+$secrets = SecretsFromS3::addToEnvironment(
+    $_ENV['ENV_TYPE'],
+    $_ENV['APP_NAME']
 );
 
 /*
