@@ -21,7 +21,7 @@ use Laravel\Vapor\Runtime\StorageDirectories;
 
 fwrite(STDERR, 'Preparing to add secrets to runtime' . PHP_EOL);
 
-$secrets = CustomSecrets::addToEnvironment(
+$secrets = CustomSecrets::fromFile(
     __DIR__.'/vaporSecrets.php'
 );
 

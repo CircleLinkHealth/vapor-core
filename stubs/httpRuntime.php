@@ -20,7 +20,7 @@ error_reporting(E_ALL);
 |
 */
 
-$secrets = CustomSecrets::addToEnvironment(
+$secrets = CustomSecrets::fromFile(
     __DIR__.'/vaporSecrets.php'
 );
 
