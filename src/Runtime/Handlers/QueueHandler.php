@@ -52,14 +52,8 @@ class QueueHandler implements LambdaEventHandler
 
             $consoleKernel = static::$app->make(Kernel::class);
 
-            $input = 'vapor:work '.rtrim(base64_encode($json = json_encode($event['Records'][0])), '=').' '.$commandOptions.' --no-interaction';
-
-            if (strlen($input) > 130000) {
-                \Log::emergency("shellargsearlyjanerror [$json]");
-            }
-
             $consoleInput = new StringInput(
-                $input
+                'vapor:work '.rtrim(base64_encode($json = json_encode($event['Records'][0])), '=').' '.$commandOptions.' --no-interaction'
             );
 
             $consoleKernel->terminate($consoleInput, $status = $consoleKernel->handle(
