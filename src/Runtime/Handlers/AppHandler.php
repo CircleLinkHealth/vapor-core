@@ -11,9 +11,10 @@ use Laravel\Vapor\Contracts\LambdaEventHandler;
 use Laravel\Vapor\Runtime\Http\PsrRequestFactory;
 use Laravel\Vapor\Runtime\HttpKernel;
 use Laravel\Vapor\Runtime\PsrLambdaResponseFactory;
+use Nyholm\Psr7\Factory\Psr17Factory;
 use Psr\Http\Message\ResponseInterface;
-use Symfony\Bridge\PsrHttpMessage\Factory\DiactorosFactory;
 use Symfony\Bridge\PsrHttpMessage\Factory\HttpFoundationFactory;
+use Symfony\Bridge\PsrHttpMessage\Factory\PsrHttpFactory;
 
 class AppHandler implements LambdaEventHandler
 {
@@ -32,8 +33,15 @@ class AppHandler implements LambdaEventHandler
                 (new HttpFoundationFactory)->createRequest($this->marshalRequest($event))
             ));
 
+            $psr17Factory = new Psr17Factory;
+
             return $this->marshalResponse(
-                (new DiactorosFactory)->createResponse($response)
+                (new PsrHttpFactory(
+                    $psr17Factory,
+                    $psr17Factory,
+                    $psr17Factory,
+                    $psr17Factory
+                ))->createResponse($response)
             );
         } finally {
             if (isset($app)) {
@@ -57,7 +65,7 @@ class AppHandler implements LambdaEventHandler
     /**
      * Marshal the PSR-7 response to a Lambda response.
      *
-     * @param  Psr\Http\Message\ResponseInterface  $response
+     * @param  \Psr\Http\Message\ResponseInterface  $response
      * @return \Laravel\Vapor\Runtime\ArrayLambdaResponse
      */
     protected function marshalResponse(ResponseInterface $response)

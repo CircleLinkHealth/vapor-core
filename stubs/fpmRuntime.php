@@ -5,12 +5,8 @@ use Laravel\Vapor\Runtime\Fpm\Fpm;
 use Laravel\Vapor\Runtime\HttpHandlerFactory;
 use Laravel\Vapor\Runtime\LambdaContainer;
 use Laravel\Vapor\Runtime\LambdaRuntime;
-use Laravel\Vapor\Runtime\Secrets;
+use Laravel\Vapor\Runtime\CustomSecrets;
 use Laravel\Vapor\Runtime\StorageDirectories;
-
-ini_set('display_errors', '1');
-
-error_reporting(E_ALL);
 
 /*
 |--------------------------------------------------------------------------
@@ -23,9 +19,10 @@ error_reporting(E_ALL);
 |
 */
 
-$secrets = Secrets::addToEnvironment(
-    $_ENV['VAPOR_SSM_PATH'],
-    json_decode($_ENV['VAPOR_SSM_VARIABLES'] ?? '[]', true)
+fwrite(STDERR, 'Preparing to add secrets to runtime' . PHP_EOL);
+
+$secrets = CustomSecrets::fromFile(
+    __DIR__.'/vaporSecrets.php'
 );
 
 /*
@@ -39,8 +36,10 @@ $secrets = Secrets::addToEnvironment(
 |
 */
 
+fwrite(STDERR, 'Preparing to boot FPM' . PHP_EOL);
+
 $fpm = Fpm::boot(
-    __DIR__.'/httpHandler.php', $secrets
+    __DIR__ . '/httpHandler.php', $secrets
 );
 
 /*
@@ -54,12 +53,12 @@ $fpm = Fpm::boot(
 |
 */
 
-with(require __DIR__.'/bootstrap/app.php', function ($app) {
+with(require __DIR__ . '/bootstrap/app.php', function ($app) {
     StorageDirectories::create();
 
     $app->useStoragePath(StorageDirectories::PATH);
 
-    fwrite(STDERR, 'Caching Laravel configuration');
+    fwrite(STDERR, 'Caching Laravel configuration' . PHP_EOL);
 
     $app->make(ConsoleKernelContract::class)->call('config:cache');
 });
@@ -82,13 +81,13 @@ $lambdaRuntime = LambdaRuntime::fromEnvironmentVariable();
 while (true) {
     $lambdaRuntime->nextInvocation(function ($invocationId, $event) {
         return HttpHandlerFactory::make($event)
-                    ->handle($event)
-                    ->toApiGatewayFormat();
+            ->handle($event)
+            ->toApiGatewayFormat();
     });
 
     $fpm->ensureRunning();
 
     LambdaContainer::terminateIfInvocationLimitHasBeenReached(
-        ++$invocations, (int) ($_ENV['VAPOR_MAX_REQUESTS'] ?? 250)
+        ++$invocations, (int)($_ENV['VAPOR_MAX_REQUESTS'] ?? 250)
     );
 }

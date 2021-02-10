@@ -4,12 +4,8 @@ use Illuminate\Contracts\Console\Kernel as ConsoleKernelContract;
 use Laravel\Vapor\Runtime\CliHandlerFactory;
 use Laravel\Vapor\Runtime\LambdaContainer;
 use Laravel\Vapor\Runtime\LambdaRuntime;
-use Laravel\Vapor\Runtime\Secrets;
+use Laravel\Vapor\Runtime\CustomSecrets;
 use Laravel\Vapor\Runtime\StorageDirectories;
-
-ini_set('display_errors', '1');
-
-error_reporting(E_ALL);
 
 /*
 |--------------------------------------------------------------------------
@@ -22,9 +18,8 @@ error_reporting(E_ALL);
 |
 */
 
-Secrets::addToEnvironment(
-    $_ENV['VAPOR_SSM_PATH'],
-    json_decode($_ENV['VAPOR_SSM_VARIABLES'] ?? '[]', true)
+$secrets = CustomSecrets::fromFile(
+    __DIR__.'/vaporSecrets.php'
 );
 
 /*
@@ -43,9 +38,18 @@ with(require __DIR__.'/bootstrap/app.php', function ($app) {
 
     $app->useStoragePath(StorageDirectories::PATH);
 
-    echo "Caching Laravel configuration.\r";
+    if (isset($_ENV['VAPOR_MAINTENANCE_MODE']) &&
+        $_ENV['VAPOR_MAINTENANCE_MODE'] === 'true') {
+        file_put_contents($app->storagePath().'/framework/down', '[]');
+    }
 
-    $app->make(ConsoleKernelContract::class)->call('config:cache');
+    echo 'Caching Laravel configuration'.PHP_EOL;
+
+    try {
+        $app->make(ConsoleKernelContract::class)->call('config:cache');
+    } catch (Throwable $e) {
+        echo 'Failing caching Laravel configuration: '.$e->getMessage().PHP_EOL;
+    }
 });
 
 /*

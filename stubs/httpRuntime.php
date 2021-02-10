@@ -1,10 +1,9 @@
 <?php
 
-use Laravel\Vapor\Runtime\Fpm\Fpm;
 use Laravel\Vapor\Runtime\HttpHandlerFactory;
 use Laravel\Vapor\Runtime\LambdaContainer;
 use Laravel\Vapor\Runtime\LambdaRuntime;
-use Laravel\Vapor\Runtime\Secrets;
+use Laravel\Vapor\Runtime\CustomSecrets;
 
 ini_set('display_errors', '1');
 
@@ -21,10 +20,10 @@ error_reporting(E_ALL);
 |
 */
 
-Secrets::addToEnvironment(
-    $_ENV['VAPOR_SSM_PATH'],
-    json_decode($_ENV['VAPOR_SSM_VARIABLES'] ?? '[]', true)
+$secrets = CustomSecrets::fromFile(
+    __DIR__.'/vaporSecrets.php'
 );
+
 /*
 |--------------------------------------------------------------------------
 | Listen For Lambda Invocations

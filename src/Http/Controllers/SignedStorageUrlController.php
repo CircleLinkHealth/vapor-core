@@ -61,7 +61,7 @@ class SignedStorageUrlController extends Controller implements SignedStorageUrlC
         return $client->getCommand('putObject', array_filter([
             'Bucket' => $bucket,
             'Key' => $key,
-            'ACL' => $this->defaultVisibility(),
+            'ACL' => $request->input('visibility') ?: $this->defaultVisibility(),
             'ContentType' => $request->input('content_type') ?: 'application/octet-stream',
             'CacheControl' => $request->input('cache_control') ?: null,
             'Expires' => $request->input('expires') ?: null,
@@ -128,6 +128,11 @@ class SignedStorageUrlController extends Controller implements SignedStorageUrlC
                 'secret' => $_ENV['AWS_SECRET_ACCESS_KEY'] ?? null,
                 'token' => $_ENV['AWS_SESSION_TOKEN'] ?? null,
             ]);
+
+            if (array_key_exists('AWS_URL', $_ENV) && ! is_null($_ENV['AWS_URL'])) {
+                $config['url'] = $_ENV['AWS_URL'];
+                $config['endpoint'] = $_ENV['AWS_URL'];
+            }
         }
 
         return S3Client::factory($config);

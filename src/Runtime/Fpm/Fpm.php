@@ -43,6 +43,13 @@ class Fpm
     protected $client;
 
     /**
+     * The FPM socket connection instance.
+     *
+     * @var \Hoa\FastCGI\SocketConnections\UnixDomainSocket
+     */
+    protected $socketConnection;
+
+    /**
      * The FPM process instance.
      *
      * @var \Symfony\Component\Process\Process
@@ -53,15 +60,17 @@ class Fpm
      * Create a new FPM instance.
      *
      * @param  \Hoa\Socket\Client  $handler
+     * @param  \Hoa\FastCGI\SocketConnections\UnixDomainSocket  $socketConnection
      * @param  string  $handler
      * @param  array  $serverVariables
      * @return void
      */
-    public function __construct(Client $client, string $handler, array $serverVariables = [])
+    public function __construct(Client $client, UnixDomainSocket $socketConnection, string $handler, array $serverVariables = [])
     {
         $this->client = $client;
         $this->handler = $handler;
         $this->serverVariables = $serverVariables;
+        $this->socketConnection = $socketConnection;
     }
 
     /**
@@ -77,9 +86,9 @@ class Fpm
             @unlink(static::SOCKET);
         }
 
-        $client = new Client(new UnixDomainSocket(static::SOCKET, 1000, 30000));
+        $socketConnection = new UnixDomainSocket(self::SOCKET, 1000, 900000);
 
-        return static::$instance = tap(new static($client, $handler, $serverVariables), function ($fpm) {
+        return static::$instance = tap(new static(new Client, $socketConnection, $handler, $serverVariables), function ($fpm) {
             $fpm->start();
         });
     }
@@ -103,6 +112,8 @@ class Fpm
             $this->killExistingFpm();
         }
 
+        fwrite(STDERR, 'Ensuring ready to start FPM'.PHP_EOL);
+
         $this->ensureReadyToStart();
 
         $this->fpm = new Process([
@@ -113,13 +124,13 @@ class Fpm
             self::CONFIG,
         ]);
 
-        fwrite(STDERR, 'Starting FPM Process...');
+        fwrite(STDERR, 'Starting FPM Process...'.PHP_EOL);
 
         $this->fpm->disableOutput()
-                ->setTimeout(null)
-                ->start(function ($type, $output) {
-                    fwrite(STDERR, $output);
-                });
+            ->setTimeout(null)
+            ->start(function ($type, $output) {
+                fwrite(STDERR, $output.PHP_EOL);
+            });
 
         $this->ensureFpmHasStarted();
     }
@@ -151,7 +162,8 @@ class Fpm
      */
     public function handle($request)
     {
-        return (new FpmApplication($this->client))->handle($request);
+        return (new FpmApplication($this->client, $this->socketConnection))
+                    ->handle($request);
     }
 
     /**
@@ -204,7 +216,7 @@ class Fpm
                 throw new Exception('PHP-FPM has stopped unexpectedly.');
             }
         } catch (Throwable $e) {
-            echo $e->getMessage();
+            echo $e->getMessage().PHP_EOL;
 
             exit(1);
         }
@@ -229,6 +241,8 @@ class Fpm
      */
     protected function killExistingFpm()
     {
+        fwrite(STDERR, 'Killing existing FPM'.PHP_EOL);
+
         if (! file_exists(static::PID_FILE)) {
             return unlink(static::SOCKET);
         }

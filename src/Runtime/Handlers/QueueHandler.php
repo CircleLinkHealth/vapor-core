@@ -40,8 +40,9 @@ class QueueHandler implements LambdaEventHandler
     public function handle(array $event)
     {
         $commandOptions = trim(sprintf(
-            '--delay=%s --tries=%s %s',
+            '--delay=%s --timeout=%s --tries=%s %s',
             $_ENV['SQS_DELAY'] ?? 3,
+            $_ENV['QUEUE_TIMEOUT'] ?? 0,
             $_ENV['SQS_TRIES'] ?? 3,
             ($_ENV['SQS_FORCE'] ?? false) ? '--force' : ''
         ));
@@ -52,7 +53,7 @@ class QueueHandler implements LambdaEventHandler
             $consoleKernel = static::$app->make(Kernel::class);
 
             $consoleInput = new StringInput(
-                'vapor:work '.base64_encode(json_encode($event['Records'][0])).' '.$commandOptions.' --no-interaction'
+                'vapor:work '.rtrim(base64_encode($json = json_encode($event['Records'][0])), '=').' '.$commandOptions.' --no-interaction'
             );
 
             $consoleKernel->terminate($consoleInput, $status = $consoleKernel->handle(

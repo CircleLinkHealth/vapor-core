@@ -1,8 +1,18 @@
 <?php
 
+ini_set('display_errors', '1');
+
+error_reporting(E_ALL);
+
+if (! file_exists('/tmp/opcache')) {
+    mkdir('/tmp/opcache');
+}
+
 $appRoot = $_ENV['LAMBDA_TASK_ROOT'];
 
 require $appRoot.'/vendor/autoload.php';
+
+fwrite(STDERR, 'Loaded Composer autoload file'.PHP_EOL);
 
 /*
 |--------------------------------------------------------------------------
@@ -20,5 +30,4 @@ if (isset($_ENV['APP_RUNNING_IN_CONSOLE']) &&
     return require __DIR__.'/cliRuntime.php';
 } else {
     return require __DIR__.'/fpmRuntime.php';
-    // return require __DIR__.'/httpRuntime.php';
 }

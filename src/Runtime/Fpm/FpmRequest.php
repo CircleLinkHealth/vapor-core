@@ -3,6 +3,7 @@
 namespace Laravel\Vapor\Runtime\Fpm;
 
 use hollodotme\FastCGI\Interfaces\ProvidesRequestData;
+use Illuminate\Support\Arr;
 
 class FpmRequest implements ProvidesRequestData
 {
@@ -75,6 +76,10 @@ class FpmRequest implements ProvidesRequestData
             $event, $headers, $serverVariables, $requestBody
         );
 
+        $headers = static::ensureSourceIpAddressIsSet(
+            $event, $headers
+        );
+
         foreach ($headers as $header => $value) {
             $serverVariables['HTTP_'.strtoupper(str_replace('-', '_', $header))] = $value;
         }
@@ -118,7 +123,9 @@ class FpmRequest implements ProvidesRequestData
 
         return http_build_query(
             collect($event['multiValueQueryStringParameters'] ?? [])
-                ->mapWithKeys(function ($values, $key) {
+                ->mapWithKeys(function ($values, $key) use ($event) {
+                    $key = ! isset($event['requestContext']['elb']) ? $key : urldecode($key);
+
                     return count($values) === 1
                         ? [$key => $values[0]]
                         : [(substr($key, -2) == '[]' ? substr($key, 0, -2) : $key) => $values];
@@ -151,7 +158,7 @@ class FpmRequest implements ProvidesRequestData
         return array_change_key_case(
             collect($event['multiValueHeaders'] ?? [])
                 ->mapWithKeys(function ($headers, $name) {
-                    return [$name => $headers[0]];
+                    return [$name => Arr::last($headers)];
                 })->all(), CASE_LOWER
         );
     }
@@ -212,5 +219,21 @@ class FpmRequest implements ProvidesRequestData
         }
 
         return [$headers, $serverVariables];
+    }
+
+    /**
+     * Ensure the request headers contain a source IP address.
+     *
+     * @param  array  $event
+     * @param  array  $headers
+     * @return array
+     */
+    protected static function ensureSourceIpAddressIsSet(array $event, array $headers)
+    {
+        if (isset($event['requestContext']['identity']['sourceIp'])) {
+            $headers['x-vapor-source-ip'] = $event['requestContext']['identity']['sourceIp'];
+        }
+
+        return $headers;
     }
 }

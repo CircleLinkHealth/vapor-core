@@ -16,9 +16,23 @@ class EnsureOnNakedDomain
      */
     public function handle($request, $next)
     {
-        if (strpos($request->getHost(), 'www.') === 0) {
+        if ('https://'.$request->getHttpHost() === $_ENV['APP_VANITY_URL']) {
+            return $next($request);
+        }
+
+        if (config('vapor.redirect_to_root') === true &&
+            strpos($request->getHost(), 'www.') === 0) {
             return new RedirectResponse(Str::replaceFirst(
                 'www.', '', $request->fullUrl()
+            ), 301);
+        }
+
+        if (config('vapor.redirect_to_root') === false &&
+            strpos($request->getHost(), 'www.') === false) {
+            return new RedirectResponse(str_replace(
+                $request->getScheme().'://',
+                $request->getScheme().'://www.',
+                $request->fullUrl()
             ), 301);
         }
 
